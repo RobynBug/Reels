@@ -1,0 +1,53 @@
+datasource db {
+    provider = "postgresql"
+    url = env("DATABASE_URL")
+}
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+model User {
+    id String @id @default(uuid())
+    email   String @unique
+    passwordHash String
+
+    providers UserProvider[]
+    watchlist Watchlist[]
+    history ViewingHistory[]
+}
+
+model UserProvider {
+    id Int @id @default(autoincrement())
+    userId String
+    providerId Int
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@unique([userId, providerId])
+    @@map("user_providers")
+}
+
+model Watchlist {
+    id          Int     @id @default(autoincrement())
+  userId      String
+  tmdbId      Int
+  mediaType   String 
+  addedAt     DateTime @default(now())
+
+  user        User    @relation(fields: [userId], references: [id])
+  @@unique([userId, tmdbId])
+  @@map("watchlist")
+}
+
+model ViewingHistory {
+  id          Int     @id @default(autoincrement())
+  userId      String
+  tmdbId      Int
+  watchedAt   DateTime @default(now())
+  
+  user        User    @relation(fields: [userId], references: [id])
+  
+  @@unique([userId, tmdbId])
+  @@map("viewing_history")
+}
