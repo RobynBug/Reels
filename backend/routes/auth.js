@@ -26,7 +26,22 @@ authRouter.post('/register', async (req, res) => {
     });
 
     const token = jwt.sign({ userId: newUser.id, email: newUser.email }, JWT_SECRET, { expiresIn: '7d' });
-    res.status(201).json({ message: 'User registered successfully', token, userId: newUser.id });
+    
+    // Consistent return payload with login
+    res
+      .cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      })
+      .status(201)
+      .json({ 
+        message: 'User registered successfully', 
+        user: { email: newUser.email },
+        token, 
+        userId: newUser.id 
+      });
   } catch (err) {
     console.error('Registration error:', err);
     res.status(500).json({ error: 'Internal server error' });
