@@ -36,15 +36,20 @@ function Watchlist() {
         <div style={styles.grid}>
           {items.map((item) => (
             <div key={item.tmdbId} style={styles.card}>
-              <img
-                src={`https://image.tmdb.org/t/p/w300${item.poster_path}`}
-                alt={item.title || item.name}
-                style={styles.image}
-              />
-              <p>{item.title || item.name}</p>
-              <button onClick={() => handleRemove(item.tmdbId)} style={styles.remove}>
-                Remove
-              </button>
+              <div style={styles.imageContainer}>
+                <img
+                  src={item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '/download.jpeg'}
+                  alt={item.title || item.name}
+                  style={styles.image}
+                />
+              </div>
+              <p style={styles.itemTitle}>{item.title || item.name}</p>
+              
+              <div style={styles.buttonContainer}>
+                <button onClick={() => handleRemove(item.tmdbId)} style={styles.remove}>
+                  Remove
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -74,31 +79,54 @@ const styles = {
     marginTop: '1rem',
   },
   card: {
-    border: '1px solid #ccc',
+    backgroundColor: '#172a3bff',
+    border: '1px solid #2c3e50',
     padding: '1rem',
     borderRadius: '8px',
-    backgroundColor: '#47494dff',
-    overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
     color: '#fff',
+    height: '100%',
+  },
+  imageContainer: {
+    width: '100%',
+    aspectRatio: '2/3',
+    overflow: 'hidden',
+    marginBottom: '1rem',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0d1b2a',
+    borderRadius: '4px',
   },
   image: {
     width: '100%',
-    height: 'auto',
-    maxWidth: '200px',
-    borderRadius: '4px',
+    height: '100%',
     objectFit: 'cover',
   },
+  itemTitle: {
+    fontWeight: 'bold',
+    marginBottom: '1rem',
+    flexGrow: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+    marginTop: 'auto',
+    width: '100%',
+  },
   remove: {
-    marginTop: '0.5rem',
     background: '#e74c3c',
     color: '#fff',
     border: 'none',
-    padding: '0.4rem 0.8rem',
+    padding: '0.5rem',
     borderRadius: '4px',
     cursor: 'pointer',
+    width: '100%',
   },
 };
 

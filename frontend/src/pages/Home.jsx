@@ -9,14 +9,16 @@ function Home() {
   const [error, setError] = useState('');
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
+  const fetchResults = async (searchQuery, page) => {
     setError('');
-    setResults([]);
-
+    
     try {
-      const res = await fetch(`${baseUrl}/api/content/search?q=${encodeURIComponent(query)}`, {
+      const res = await fetch(`${baseUrl}/api/content/search?q=${encodeURIComponent(searchQuery)}&page=${page}`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -24,36 +26,75 @@ function Home() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || 'Search failed');
+        setResults([]);
         return;
       }
 
-      setResults(data);
+      setResults(data.results);
+      setCurrentPage(data.page);
+      setTotalPages(data.totalPages);
     } catch {
       setError('Something went wrong');
+      setResults([]);
     }
   };
 
-const handleAddToWatchlist = async (item) => {
-  const tmdbId = item.tmdbId || item.id;
-  const mediaType =
-    item.mediaType ||
-    item.media_type ||
-    (item.first_air_date ? 'tv' : item.release_date ? 'movie' : null);
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    setCurrentPage(1);
+    fetchResults(query, 1);
+  };
 
-  if (!tmdbId || !mediaType) {
-    console.error('Missing tmdbId or mediaType for watchlist item:', item);
-    return;
-  }
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      fetchResults(query, currentPage + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
-  await fetch(`${baseUrl}/api/watchlist`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ tmdbId, mediaType }),
-  });
-};
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      fetchResults(query, currentPage - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
+  const addToHistory = async (tmdbId, mediaType) => {
+    try {
+      await fetch(`${baseUrl}/api/history`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ tmdbId, mediaType }),
+      });
+    } catch (err) {
+      console.error('Failed to add to history:', err);
+    }
+  };
 
+  const handleAddToWatchlist = async (item) => {
+    const tmdbId = item.tmdbId || item.id;
+    const mediaType =
+      item.mediaType ||
+      item.media_type ||
+      (item.first_air_date ? 'tv' : item.release_date ? 'movie' : null);
+
+    if (!tmdbId || !mediaType) {
+      console.error('Missing tmdbId or mediaType for watchlist item:', item);
+      return;
+    }
+
+    // Add to history whenever interacted with
+    addToHistory(tmdbId, mediaType);
+
+    await fetch(`${baseUrl}/api/watchlist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ tmdbId, mediaType }),
+    });
+    alert('Added to Watchlist!');
+  };
 
   const guessMediaType = (item) => {
     if (item.mediaType || item.media_type) return item.mediaType || item.media_type;
@@ -67,6 +108,9 @@ const handleAddToWatchlist = async (item) => {
       console.error('Missing media type for TMDB item');
       return;
     }
+
+    // Add to history whenever interacted with
+    addToHistory(tmdbId, mediaType);
 
     try {
       const [detailsRes, videosRes, providersRes] = await Promise.all([
@@ -111,63 +155,97 @@ const handleAddToWatchlist = async (item) => {
       {error && <p style={styles.error}>{error}</p>}
 
       {results.length > 0 && (
-        <div style={styles.grid}>
-          {results.map((item) => (
-            <div key={item.id} style={styles.card}>
-              <img
-                src={item.imageUrl || '/download.jpeg'}
-                alt={item.title || item.name}
-                style={styles.image}
-              />
-              <p>{item.title || item.name}</p>
-              <button
-                onClick={() => handleShowDetails(item.tmdbId || item.id, guessMediaType(item))}
-                style={styles.details}
+        <>
+          <div style={styles.grid}>
+            {results.map((item) => (
+              <div key={item.id} style={styles.card}>
+                <div style={styles.imageContainer}>
+                   <img
+                    src={item.imageUrl || '/download.jpeg'}
+                    alt={item.title || item.name}
+                    style={styles.image}
+                   />
+                </div>
+                <p style={styles.itemTitle}>{item.title || item.name}</p>
+                
+                <div style={styles.buttonContainer}>
+                  <button
+                    onClick={() => handleShowDetails(item.tmdbId || item.id, guessMediaType(item))}
+                    style={styles.details}
+                  >
+                    Details
+                  </button>
+                  <button
+                    onClick={() => handleAddToWatchlist(item)}
+                    style={styles.add}
+                  >
+                    Add to Watchlist
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div style={styles.paginationContainer}>
+              <button 
+                onClick={handlePrevPage} 
+                disabled={currentPage === 1}
+                style={{...styles.pageButton, opacity: currentPage === 1 ? 0.5 : 1}}
               >
-                Details
+                Previous
               </button>
-              <button
-                onClick={() => handleAddToWatchlist(item)}
-                style={styles.add}
+              <span style={styles.pageText}>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button 
+                onClick={handleNextPage} 
+                disabled={currentPage === totalPages}
+                style={{...styles.pageButton, opacity: currentPage === totalPages ? 0.5 : 1}}
               >
-                Add to Watchlist
+                Next
               </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       {showModal && selectedMovie && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
-            <h2>{selectedMovie.title} ({selectedMovie.mediaType === 'tv' ? 'TV Show' : 'Movie'})</h2>
-            <p>{selectedMovie.overview}</p>
+            <div style={styles.modalScrollableContent}>
+              <h2>{selectedMovie.title} ({selectedMovie.mediaType === 'tv' ? 'TV Show' : 'Movie'})</h2>
+              <p>{selectedMovie.overview}</p>
 
-            {selectedMovie.trailerUrl && (
-              <iframe
-                width="100%"
-                height="315"
-                src={selectedMovie.trailerUrl}
-                title="Trailer"
-                frameBorder="0"
-                allowFullScreen
-              ></iframe>
-            )}
+              {selectedMovie.trailerUrl && (
+                <iframe
+                  width="100%"
+                  height="315"
+                  src={selectedMovie.trailerUrl}
+                  title="Trailer"
+                  frameBorder="0"
+                  allowFullScreen
+                ></iframe>
+              )}
 
-            {selectedMovie.streaming.length > 0 ? (
-              <div>
-                <h4>Available on:</h4>
-                <ul>
-                  {selectedMovie.streaming.map((provider) => (
-                    <li key={provider.provider_id}>{provider.provider_name}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <p>Not currently available to stream in the US.</p>
-            )}
-
-            <button onClick={() => setShowModal(false)} style={styles.close}>Close</button>
+              {selectedMovie.streaming.length > 0 ? (
+                <div>
+                  <h4>Available on:</h4>
+                  <ul>
+                    {selectedMovie.streaming.map((provider) => (
+                      <li key={provider.provider_id}>{provider.provider_name}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p>Not currently available to stream in the US.</p>
+              )}
+            </div>
+            
+            <div style={styles.modalActions}>
+              <button onClick={() => setShowModal(false)} style={styles.close}>Close</button>
+            </div>
           </div>
         </div>
       )}
@@ -206,9 +284,10 @@ const styles = {
   },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
     gap: '1.5rem',
     marginTop: '1rem',
+    marginBottom: '2rem',
   },
   card: {
     backgroundColor: '#172a3bff',
@@ -218,31 +297,78 @@ const styles = {
     transition: 'transform 0.2s ease',
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
     color: '#fff',
+    height: '100%',
+  },
+  imageContainer: {
+    width: '100%',
+    aspectRatio: '2/3',
+    overflow: 'hidden',
+    marginBottom: '1rem',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0d1b2a',
+    borderRadius: '4px',
   },
   image: {
     width: '100%',
-    height: 'auto',
-    borderRadius: '4px',
+    height: '100%',
+    objectFit: 'cover',
+  },
+  itemTitle: {
+    fontWeight: 'bold',
+    marginBottom: '1rem',
+    flexGrow: 1, 
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+    marginTop: 'auto', 
+    width: '100%',
   },
   add: {
-    marginTop: '0.5rem',
     background: '#3498db',
     color: '#fff',
     border: 'none',
-    padding: '0.4rem 0.8rem',
+    padding: '0.5rem',
     borderRadius: '4px',
     cursor: 'pointer',
+    width: '100%',
   },
   details: {
-    marginTop: '0.5rem',
     background: '#2ecc71',
     color: '#fff',
     border: 'none',
-    padding: '0.4rem 0.8rem',
+    padding: '0.5rem',
     borderRadius: '4px',
     cursor: 'pointer',
+    width: '100%',
+  },
+  paginationContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '1rem',
+    marginTop: '2rem',
+    marginBottom: '2rem',
+  },
+  pageButton: {
+    background: '#34495e',
+    color: '#fff',
+    border: 'none',
+    padding: '0.6rem 1.2rem',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '1rem',
+  },
+  pageText: {
+    color: '#fff',
+    fontSize: '1.1rem',
   },
   modalOverlay: {
     position: 'fixed',
@@ -252,24 +378,38 @@ const styles = {
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
+    padding: '1rem',
   },
   modalContent: {
     background: '#0d1b2a',
     color: '#fff',
-    padding: '2rem',
     borderRadius: '8px',
     maxWidth: '600px',
-    width: '90%',
+    width: '100%',
+    maxHeight: '90vh',
+    display: 'flex',
+    flexDirection: 'column',
     textAlign: 'left',
   },
+  modalScrollableContent: {
+    padding: '2rem',
+    overflowY: 'auto',
+  },
+  modalActions: {
+    padding: '1rem 2rem',
+    borderTop: '1px solid #2c3e50',
+    background: '#0d1b2a',
+    borderRadius: '0 0 8px 8px',
+  },
   close: {
-    marginTop: '1rem',
     background: '#e74c3c',
     color: '#fff',
     border: 'none',
-    padding: '0.4rem 0.8rem',
+    padding: '0.6rem 1rem',
     borderRadius: '4px',
     cursor: 'pointer',
+    width: '100%',
+    fontSize: '1rem',
   },
 };
 
