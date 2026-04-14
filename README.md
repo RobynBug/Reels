@@ -1,62 +1,29 @@
-# Reels
+# Reels - Full-Stack Media Tracking Architecture
 
-A full-stack web application for sharing short video content, built with React and Node.js.
+Reels is a full-stack media platform designed to handle complex user data life-cycles, secure session management, and persistent viewing states. This project served as the architectural foundation and inspiration for the collaborative project **K-FEELZ**.
 
-## Tech Stack
+## 🚀 Engineering Highlights
 
-### Frontend
-*   **Framework:** React (Vite)
-*   **State Management:** Redux Toolkit
-*   **Routing:** React Router DOM
-*   **Styling:** Tailwind CSS
-*   **HTTP Client:** Axios
+- **Relational Data Modeling:** Architected a scalable **PostgreSQL** schema using **Prisma** to manage high-volume user interactions, including viewing history and watchlists with unique constraints to ensure data integrity.
+- **Security & Session Rigor:** Engineered a professional-grade security layer using **JWT** and **Bcrypt**. Developed custom **Middleware** to extract and validate tokens from secure cookies, implementing graceful error handling for unauthorized access.
+- **Asynchronous State Management:** Utilized **Redux Toolkit** and `createAsyncThunk` to manage non-deterministic API lifecycles (pending, fulfilled, rejected), ensuring the UI remains responsive during high-latency media fetching.
+- **Media Preview Logic:** Developed a dynamic preview system that utilizes conditional rendering to provide users with a video/modal preview of media assets before engagement.
 
-### Backend
-*   **Runtime:** Node.js
-*   **Framework:** Express.js
-*   **Database ORM:** Prisma
-*   **Authentication:** JWT, bcrypt
-*   **Utilities:** cookie-parser, cors, dotenv
+## 🛠️ Technical Toolbox
 
-## Getting Started
+- **Frontend:** React, Redux Toolkit, CSS3 (Flexbox/Grid)
+- **Backend:** Node.js, Express.js
+- **Database:** PostgreSQL, Prisma ORM
+- **Auth:** JSON Web Tokens (JWT), Bcrypt, Cookie-parser
+- **APIs:** The Movie Database (TMDB) API
 
-### Prerequisites
-*   Node.js installed
-*   npm or yarn
-*   Database (configured via Prisma)
+## 🧩 Architectural Implementation
 
-### Installation
+### Backend Security Flow
+The application utilizes a custom `authenticateToken` middleware that acts as a gatekeeper for all media routes. By verifying signatures against a protected `JWT_SECRET`, the system prevents unauthorized data tampering.
 
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository-url>
-    cd Reels
-    ```
+### Persistence Engine
+Leveraging Prisma's `upsert` logic, the viewing history tracker ensures that user engagement is recorded in real-time. If a user re-watches a title, the system updates the `watchedAt` timestamp rather than creating redundant entries, maintaining a clean and performant database.
 
-2.  **Backend Setup:**
-    ```bash
-    cd backend
-    npm install
-    # Create a .env file and configure DATABASE_URL and JWT_SECRET
-    npx prisma generate
-    ```
-
-3.  **Frontend Setup:**
-    ```bash
-    cd ../frontend
-    npm install
-    ```
-
-### Running the Application
-
-1.  **Start the Backend:**
-    ```bash
-    cd backend
-    npm run dev
-    ```
-
-2.  **Start the Frontend:**
-    ```bash
-    cd frontend
-    npm run dev
-    ```
+## 📈 Evolution to K-FEELZ
+Reels provided the core authentication and media fetching logic that was later scaled into **K-FEELZ**. The transition involved moving from a search-based discovery model to a weighted, logic-driven recommendation engine.
