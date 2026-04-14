@@ -27,3 +27,9 @@ Leveraging Prisma's `upsert` logic, the viewing history tracker ensures that use
 
 ## 📈 Evolution to K-FEELZ
 Reels provided the core authentication and media fetching logic that was later scaled into **K-FEELZ**. The transition involved moving from a search-based discovery model to a weighted, logic-driven recommendation engine.
+
+
+
+
+https://github.com/user-attachments/assets/e5be7df7-5597-4dd3-adb1-6914099999bf
+
