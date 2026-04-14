@@ -10,6 +10,9 @@ function Home() {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [showModal, setShowModal] = useState(false);
   
+  // Custom toast notification state
+  const [toastMessage, setToastMessage] = useState('');
+  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -59,6 +62,11 @@ function Home() {
     }
   };
 
+  const showToast = (message) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(''), 3000); // Hide after 3 seconds
+  };
+
   const addToHistory = async (tmdbId, mediaType) => {
     try {
       await fetch(`${baseUrl}/api/history`, {
@@ -87,13 +95,18 @@ function Home() {
     // Add to history whenever interacted with
     addToHistory(tmdbId, mediaType);
 
-    await fetch(`${baseUrl}/api/watchlist`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ tmdbId, mediaType }),
-    });
-    alert('Added to Watchlist!');
+    try {
+      await fetch(`${baseUrl}/api/watchlist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ tmdbId, mediaType }),
+      });
+      showToast('Added to Watchlist!');
+    } catch (err) {
+      console.error('Failed to add to watchlist:', err);
+      showToast('Failed to add to Watchlist');
+    }
   };
 
   const guessMediaType = (item) => {
@@ -153,6 +166,13 @@ function Home() {
       </form>
 
       {error && <p style={styles.error}>{error}</p>}
+      
+      {/* Custom Toast Notification */}
+      {toastMessage && (
+        <div style={styles.toast}>
+          {toastMessage}
+        </div>
+      )}
 
       {results.length > 0 && (
         <>
@@ -257,6 +277,21 @@ const styles = {
   container: {
     padding: '2rem',
     textAlign: 'center',
+    position: 'relative', // for absolute toast positioning
+  },
+  toast: {
+    position: 'fixed',
+    bottom: '30px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    backgroundColor: '#2ecc71',
+    color: '#fff',
+    padding: '1rem 2rem',
+    borderRadius: '8px',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+    zIndex: 2000,
+    fontWeight: 'bold',
+    animation: 'fadeInOut 3s ease-in-out',
   },
   title: {
     fontSize: '3rem',
@@ -412,5 +447,20 @@ const styles = {
     fontSize: '1rem',
   },
 };
+
+// Simple global style for toast animation if needed
+// (In a full app you might add this to your main CSS file)
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.innerHTML = `
+    @keyframes fadeInOut {
+      0% { opacity: 0; bottom: 10px; }
+      15% { opacity: 1; bottom: 30px; }
+      85% { opacity: 1; bottom: 30px; }
+      100% { opacity: 0; bottom: 10px; }
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 export default Home;

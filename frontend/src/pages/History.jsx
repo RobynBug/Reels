@@ -11,6 +11,9 @@ const History = () => {
 
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  
+  // Custom toast notification state
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     fetchHistory();
@@ -71,6 +74,11 @@ const History = () => {
     }
   };
 
+  const showToast = (message) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(''), 3000); // Hide after 3 seconds
+  };
+
   const handleAddToWatchlist = async (item) => {
     const tmdbId = item.tmdbId;
     const mediaType = item.mediaType;
@@ -87,9 +95,10 @@ const History = () => {
         credentials: 'include',
         body: JSON.stringify({ tmdbId, mediaType }),
       });
-      alert('Added to Watchlist!');
+      showToast('Added to Watchlist!');
     } catch (err) {
       console.error('Failed to add to watchlist:', err);
+      showToast('Failed to add to Watchlist');
     }
   };
 
@@ -126,6 +135,14 @@ const History = () => {
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>Recently Viewed</h1>
+      
+      {/* Custom Toast Notification */}
+      {toastMessage && (
+        <div style={styles.toast}>
+          {toastMessage}
+        </div>
+      )}
+      
       {detailedItems.length === 0 ? (
         <p>No history yet. Search for some movies to get started!</p>
       ) : (
@@ -210,6 +227,21 @@ const styles = {
   container: {
     padding: '2rem',
     textAlign: 'center',
+    position: 'relative', // for absolute toast positioning
+  },
+  toast: {
+    position: 'fixed',
+    bottom: '30px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    backgroundColor: '#2ecc71',
+    color: '#fff',
+    padding: '1rem 2rem',
+    borderRadius: '8px',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+    zIndex: 2000,
+    fontWeight: 'bold',
+    animation: 'fadeInOut 3s ease-in-out',
   },
   title: {
     fontSize: '2.5rem',

@@ -29,6 +29,8 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const enrichedItems = tmdbResponses.map((response, index) => ({
       ...response.data,
+      // Make sure we explicitly include id/tmdbId in the enriched object
+      tmdbId: items[index].tmdbId,
       mediaType: items[index].mediaType,
       addedAt: items[index].addedAt,
     }));

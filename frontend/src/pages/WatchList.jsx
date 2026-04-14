@@ -5,10 +5,18 @@ import { fetchWatchlist } from '../redux/watchlistSlice';
 function Watchlist() {
   const dispatch = useDispatch();
   const { items, status } = useSelector((state) => state.watchlist);
+  
+  // Custom toast notification state
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     dispatch(fetchWatchlist());
   }, [dispatch]);
+  
+  const showToast = (message) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
 
   const handleRemove = async (tmdbId) => {
     try {
@@ -17,14 +25,23 @@ function Watchlist() {
         credentials: 'include',
       });
       dispatch(fetchWatchlist());
+      showToast('Removed from Watchlist');
     } catch (err) {
       console.error('Failed to remove item:', err);
+      showToast('Failed to remove item');
     }
   };
 
   return (
     <div style={styles.container}>
       <h2 style={styles.title}>My Watchlist</h2>
+      
+      {/* Custom Toast Notification */}
+      {toastMessage && (
+        <div style={styles.toast}>
+          {toastMessage}
+        </div>
+      )}
 
       {status === 'loading' && <p style={styles.message}>Loading...</p>}
       {status === 'failed' && <p style={styles.message}>Failed to load your watchlist.</p>}
@@ -62,6 +79,21 @@ const styles = {
   container: {
     padding: '2rem',
     textAlign: 'center',
+    position: 'relative', // for absolute toast positioning
+  },
+  toast: {
+    position: 'fixed',
+    bottom: '30px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    backgroundColor: '#2ecc71',
+    color: '#fff',
+    padding: '1rem 2rem',
+    borderRadius: '8px',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+    zIndex: 2000,
+    fontWeight: 'bold',
+    animation: 'fadeInOut 3s ease-in-out',
   },
   title: {
     fontSize: '2rem',
